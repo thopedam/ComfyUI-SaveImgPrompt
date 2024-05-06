@@ -1,14 +1,17 @@
+import json
+import os
+import re
+import socket
+import subprocess
+import time
+
+import colorama
+import folder_paths as comfy_paths
+import img2pdf
 import numpy as np
+from colorama import Back, Fore, Style, init
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
-import colorama
-from colorama import init, Fore, Back, Style
-import os
-import json
-import time
-import socket
-import re
-import folder_paths as comfy_paths
 
 # by mpiquero v1.0.1
 # comfyUI node to save an image and prompt and details
@@ -91,7 +94,8 @@ class Save_img_prompt:
                 "show_history_by_prefix": (["true", "false"],),
                 "embed_workflow": (["true", "false"],),
                 "show_previews": (["true", "false"],),
-                "save_prompt": (["true","false"],)
+                "save_prompt": (["true","false"],),
+                "print_image": (["true", "false"],),
                 },
             "hidden": {
                 "prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"
@@ -112,6 +116,7 @@ class Save_img_prompt:
                         filename_number_padding=4,
                         filename_number_start='false',
                         show_history='false', 
+                        print_image='false',
                         show_history_by_prefix="true", 
                         img_extension='png',
                         quality=100,
@@ -230,7 +235,22 @@ class Save_img_prompt:
                         f.write(prompt_json)
 
                 print(Fore.GREEN + f"+ File(s) saved to: {img_output_file}", end='')
-
+                if print_image == "true":
+                    with open(img_output_file, "rb") as new_img_file:
+                        pdf_bytes = img2pdf.convert(new_img_file.read())
+                        pdf_output_file = img_output_file.replace(img_extension, "pdf")
+                        with open(pdf_output_file, "wb") as pdf_file:
+                            pdf_file.write(pdf_bytes)
+                        time.sleep(1)
+                    try:
+                        pdf_printer = os.path.join(os.path.dirname(__file__),"PDFtoPrinter.exe")
+                        print(pdf_printer)
+                        subprocess.run([pdf_printer, pdf_output_file],check=True, capture_output=True, text=True)
+                    except subprocess.CalledProcessError as e:
+                        print(f"Command failed with exit code {e.returncode}, stdout: {e.stdout}, stderr: {e.stderr}")
+                    #subprocess.run(["rundll32", "C:\Windows\System32\shimgvw.dll,ImageView_PrintTo", "Microsoft Print to PDF", img_output_file], check=True, capture_output=True, text=True)
+                    
+                    
                 if show_history != 'true' and show_previews == 'true':
                     subfolder = self.get_subfolder_path(img_output_file, original_output)
                     results.append({
