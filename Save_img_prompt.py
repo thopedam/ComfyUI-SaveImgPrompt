@@ -198,7 +198,7 @@ class Save_img_prompt:
             if embed_workflow == 'true':
                 if prompt is not None:
                     metadata.add_text("prompt", json.dumps(prompt))
-                    prompt_json = "{ \"prompt\":" + json.dumps(prompt, indent=4)
+                    prompt_json = json.dumps(prompt, indent=4)
                 if extra_pnginfo is not None:
                     for x in extra_pnginfo:
                         metadata.add_text(x, json.dumps(extra_pnginfo[x]))
@@ -206,7 +206,7 @@ class Save_img_prompt:
             else: 
                 if save_prompt == "true":  
                     metadata.add_text("prompt", json.dumps(prompt))
-                    prompt_json = "\"prompt\":" + json.dumps(prompt, indent=4)
+                    prompt_json = json.dumps(prompt, indent=4)
             if overwrite_mode == 'prefix_as_filename':
                 img_file = f"{filename_prefix}{img_file_extension}"
                 prompt_file = f"{filename_prefix}{prompt_file_extension}"
@@ -237,7 +237,11 @@ class Save_img_prompt:
                 print(Fore.GREEN + f"+ File(s) saved to: {img_output_file}", end='')
                 if print_image == "true":
                     with open(img_output_file, "rb") as new_img_file:
-                        pdf_bytes = img2pdf.convert(new_img_file.read())
+                        width_cm = 100
+                        height_cm = 150
+                        photoInput = (img2pdf.mm_to_pt(width_cm),img2pdf.mm_to_pt(height_cm))
+                        layout_fun = img2pdf.get_layout_fun(photoInput)
+                        pdf_bytes = img2pdf.convert(new_img_file.read(), layout_fun=layout_fun)
                         pdf_output_file = img_output_file.replace(img_extension, "pdf")
                         with open(pdf_output_file, "wb") as pdf_file:
                             pdf_file.write(pdf_bytes)
